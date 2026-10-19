@@ -47,7 +47,7 @@
     }
     .card {
       width: 100%;
-      max-width: 1040px;
+      max-width: 1240px;
       max-height: 100%;
       display: flex;
       flex-direction: column;
@@ -101,21 +101,24 @@
     /* タブ（狭い画面のみ） */
     .tabs { display: none; }
 
-    /* 情報グリッド */
+    /* 情報エリア：段組みで高さを揃える */
     .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0 32px;
+      columns: 3;
+      column-gap: 32px;
       min-height: 0;
       overflow: hidden;
     }
-    section { min-width: 0; }
+    section {
+      break-inside: avoid;
+      min-width: 0;
+      padding-top: 16px;
+    }
     h2 {
       font-size: 11px;
       font-weight: 600;
       color: var(--muted);
       letter-spacing: 0.06em;
-      margin: 16px 0 2px;
+      margin: 0 0 2px;
     }
     dl { margin: 0; }
     .row {
@@ -145,12 +148,18 @@
     }
     .ok { color: var(--ok); font-weight: 600; }
     .warn { color: var(--warn); font-weight: 600; }
+    .muted { color: var(--muted); }
+
+    /* 中くらいの幅は2段組み */
+    @media (max-width: 1100px) and (min-width: 761px) {
+      .grid { columns: 2; }
+    }
 
     /* 高さが低い画面では詰める */
-    @media (max-height: 760px) and (min-width: 761px) {
+    @media (max-height: 820px) and (min-width: 761px) {
       .card { padding: 18px 24px; }
       header { padding-bottom: 12px; }
-      h2 { margin-top: 10px; }
+      section { padding-top: 10px; }
       .row { padding: 3px 0; }
     }
 
@@ -162,7 +171,7 @@
       .lead { display: none; }
       .tabs {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 4px;
         margin-top: 12px;
         padding: 4px;
@@ -181,11 +190,10 @@
         cursor: pointer;
       }
       .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); }
-      .grid { grid-template-columns: 1fr; overflow-y: auto; }
-      section { display: none; }
+      .grid { columns: 1; overflow-y: auto; }
+      section { display: none; padding-top: 8px; }
       section.active { display: block; }
       h2 { display: none; }
-      dl { margin-top: 8px; }
       .row { grid-template-columns: 1fr; gap: 0; padding: 7px 0; }
       dd { white-space: normal; word-break: break-all; }
     }
@@ -203,14 +211,19 @@
     </header>
 
     <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="page" aria-selected="true">ページ</button>
+      <button role="tab" data-tab="origin" aria-selected="true">接続元</button>
+      <button role="tab" data-tab="page" aria-selected="false">ページ</button>
       <button role="tab" data-tab="browser" aria-selected="false">ブラウザ</button>
       <button role="tab" data-tab="screen" aria-selected="false">画面</button>
       <button role="tab" data-tab="env" aria-selected="false">環境</button>
     </nav>
 
     <div class="grid">
-      <section data-section="page" class="active">
+      <section data-section="origin" class="active">
+        <h2>接続元</h2>
+        <dl id="origin"></dl>
+      </section>
+      <section data-section="page">
         <h2>ページ</h2>
         <dl id="page"></dl>
       </section>
@@ -250,6 +263,57 @@
         dl.append(row);
       }
     }
+
+    /* ---------- 接続元（/cdn-cgi/trace） ---------- */
+
+    function countryName(code) {
+      if (!code || code === "XX") return "不明";
+      try {
+        const name = new Intl.DisplayNames(["ja"], { type: "region" }).of(code);
+        return `${name}（${code}）`;
+      } catch {
+        return code;
+      }
+    }
+
+    function formatHttp(v) {
+      if (!v) return "";
+      return v.replace(/^http\//i, "HTTP/").replace(/^h2$/i, "HTTP/2").replace(/^h3$/i, "HTTP/3");
+    }
+
+    async function loadOrigin() {
+      render("origin", [["状態", "取得中…", "muted"]]);
+      try {
+        const res = await fetch("/cdn-cgi/trace", { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status);
+        const text = await res.text();
+        const data = Object.fromEntries(
+          text.trim().split("\n")
+            .map(line => line.split("="))
+            .filter(parts => parts.length >= 2)
+            .map(([k, ...v]) => [k.trim(), v.join("=").trim()])
+        );
+        if (!data.ip) throw new Error("no data");
+
+        const ts = data.ts ? new Date(parseFloat(data.ts) * 1000).toLocaleString("ja-JP") : "";
+
+        render("origin", [
+          ["IPアドレス", data.ip],
+          ["IPバージョン", data.ip.includes(":") ? "IPv6" : "IPv4"],
+          ["国・地域", countryName(data.loc)],
+          ["接続拠点", data.colo],
+          ["HTTP", formatHttp(data.http)],
+          ["TLS", data.tls && data.tls !== "off" ? data.tls : "なし"],
+          ["サーバー時刻", ts],
+        ]);
+      } catch {
+        render("origin", [
+          ["状態", "取得できませんでした", "warn"],
+        ]);
+      }
+    }
+
+    /* ---------- ブラウザ情報 ---------- */
 
     function detectBrowser(ua) {
       const list = [
@@ -338,8 +402,9 @@
     }
 
     renderAll();
+    loadOrigin();
     addEventListener("resize", renderAll);
-    addEventListener("online", renderAll);
+    addEventListener("online", () => { renderAll(); loadOrigin(); });
     addEventListener("offline", renderAll);
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 
