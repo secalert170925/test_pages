@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pages 公開テスト</title>
+  <title>テストページ</title>
   <style>
     :root {
       --bg: #f6f7f9;
@@ -15,7 +15,7 @@
       --ok-bg: #e7f6ef;
       --warn: #b54708;
       --warn-bg: #fef3e7;
-      --accent: #f38020;
+      --tab: #eef0f3;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -28,115 +28,335 @@
         --ok-bg: #15301f;
         --warn: #fbbf24;
         --warn-bg: #33270f;
+        --tab: #242a35;
       }
     }
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100dvh;
       display: grid;
       place-items: center;
-      padding: 24px 16px;
+      padding: 16px;
+      overflow: hidden;
       background: var(--bg);
       color: var(--text);
       font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-      line-height: 1.6;
+      line-height: 1.5;
     }
     .card {
       width: 100%;
-      max-width: 560px;
+      max-width: 1040px;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 32px 28px;
+      padding: 24px 28px;
+      overflow: hidden;
     }
+
+    /* ヘッダー */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .title { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--ok);
       background: var(--ok-bg);
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 999px;
     }
     .badge::before {
       content: "";
-      width: 8px; height: 8px;
+      width: 7px; height: 7px;
       border-radius: 50%;
       background: currentColor;
     }
-    h1 {
-      font-size: 26px;
-      margin: 16px 0 4px;
-      letter-spacing: -0.01em;
-    }
-    p.lead { margin: 0 0 24px; color: var(--muted); }
-    dl { margin: 0; border-top: 1px solid var(--line); }
-    .row {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--line);
-      font-size: 14px;
-    }
-    dt { color: var(--muted); }
-    dd { margin: 0; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .ok { color: var(--ok); font-weight: 600; }
-    .warn { color: var(--warn); font-weight: 600; }
+    h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+    .lead { margin: 0; font-size: 13px; color: var(--muted); }
     .note {
-      margin-top: 20px;
-      font-size: 13px;
-      color: var(--muted);
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ok);
+      background: var(--ok-bg);
+      border-radius: 8px;
+      padding: 6px 12px;
     }
     .note.warn-box { color: var(--warn); background: var(--warn-bg); }
-    footer { margin-top: 20px; font-size: 12px; color: var(--muted); text-align: center; }
+
+    /* タブ（狭い画面のみ） */
+    .tabs { display: none; }
+
+    /* 情報グリッド */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 32px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    section { min-width: 0; }
+    h2 {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin: 16px 0 2px;
+    }
+    dl { margin: 0; }
+    .row {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+    dt { color: var(--muted); }
+    dd {
+      margin: 0;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    dd.long {
+      white-space: normal;
+      word-break: break-all;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .ok { color: var(--ok); font-weight: 600; }
+    .warn { color: var(--warn); font-weight: 600; }
+
+    /* 高さが低い画面では詰める */
+    @media (max-height: 760px) and (min-width: 761px) {
+      .card { padding: 18px 24px; }
+      header { padding-bottom: 12px; }
+      h2 { margin-top: 10px; }
+      .row { padding: 3px 0; }
+    }
+
+    /* 狭い画面：タブ切り替えで1セクションずつ表示 */
+    @media (max-width: 760px) {
+      body { padding: 12px; }
+      .card { padding: 18px 16px; height: 100%; }
+      header { padding-bottom: 12px; }
+      .lead { display: none; }
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        margin-top: 12px;
+        padding: 4px;
+        background: var(--tab);
+        border-radius: 10px;
+      }
+      .tabs button {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 7px 0;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); }
+      .grid { grid-template-columns: 1fr; overflow-y: auto; }
+      section { display: none; }
+      section.active { display: block; }
+      h2 { display: none; }
+      dl { margin-top: 8px; }
+      .row { grid-template-columns: 1fr; gap: 0; padding: 7px 0; }
+      dd { white-space: normal; word-break: break-all; }
+    }
   </style>
 </head>
 <body>
   <main class="card">
-    <span class="badge">公開中</span>
-    <h1>Hello, GitHub Pages!</h1>
-    <p class="lead">このページが表示されていれば、デプロイは成功しています。</p>
+    <header>
+      <div class="title">
+        <span class="badge">公開中</span>
+        <h1>テストページ</h1>
+        <p class="lead">このページが表示されていれば、公開は成功しています。</p>
+      </div>
+      <div class="note" id="note"></div>
+    </header>
 
-    <dl>
-      <div class="row"><dt>ドメイン</dt><dd id="host">-</dd></div>
-      <div class="row"><dt>接続</dt><dd id="proto">-</dd></div>
-      <div class="row"><dt>URL</dt><dd id="url">-</dd></div>
-      <div class="row"><dt>表示時刻</dt><dd id="time">-</dd></div>
-      <div class="row"><dt>ページ更新</dt><dd id="build">2026-10-19</dd></div>
-    </dl>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="page" aria-selected="true">ページ</button>
+      <button role="tab" data-tab="browser" aria-selected="false">ブラウザ</button>
+      <button role="tab" data-tab="screen" aria-selected="false">画面</button>
+      <button role="tab" data-tab="env" aria-selected="false">環境</button>
+    </nav>
 
-    <div class="note" id="note"></div>
-
-    <footer>Hosted on GitHub Pages · DNS by Cloudflare</footer>
+    <div class="grid">
+      <section data-section="page" class="active">
+        <h2>ページ</h2>
+        <dl id="page"></dl>
+      </section>
+      <section data-section="browser">
+        <h2>ブラウザ</h2>
+        <dl id="browser"></dl>
+      </section>
+      <section data-section="screen">
+        <h2>画面</h2>
+        <dl id="screen"></dl>
+      </section>
+      <section data-section="env">
+        <h2>環境・ネットワーク</h2>
+        <dl id="env"></dl>
+      </section>
+    </div>
   </main>
 
   <script>
-    const host = location.hostname;
+    const nav = navigator;
     const https = location.protocol === "https:";
 
-    document.getElementById("host").textContent = host;
-    document.getElementById("url").textContent = location.href;
-    document.getElementById("time").textContent = new Date().toLocaleString("ja-JP");
+    function render(id, rows) {
+      const dl = document.getElementById(id);
+      dl.innerHTML = "";
+      for (const [label, value, cls] of rows) {
+        if (value === undefined || value === null || value === "") continue;
+        const row = document.createElement("div");
+        row.className = "row";
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        dd.title = value;
+        if (cls) dd.className = cls;
+        row.append(dt, dd);
+        dl.append(row);
+      }
+    }
 
-    const proto = document.getElementById("proto");
-    proto.textContent = https ? "HTTPS（暗号化あり）" : "HTTP（暗号化なし）";
-    proto.className = https ? "ok" : "warn";
+    function detectBrowser(ua) {
+      const list = [
+        [/Edg\/([\d.]+)/, "Edge"],
+        [/OPR\/([\d.]+)/, "Opera"],
+        [/SamsungBrowser\/([\d.]+)/, "Samsung Internet"],
+        [/Firefox\/([\d.]+)/, "Firefox"],
+        [/CriOS\/([\d.]+)/, "Chrome (iOS)"],
+        [/FxiOS\/([\d.]+)/, "Firefox (iOS)"],
+        [/Chrome\/([\d.]+)/, "Chrome"],
+        [/Version\/([\d.]+).*Safari/, "Safari"],
+      ];
+      for (const [re, name] of list) {
+        const m = ua.match(re);
+        if (m) return `${name} ${m[1].split(".")[0]}`;
+      }
+      return "不明";
+    }
+
+    function detectOS(ua) {
+      if (/iPhone|iPad|iPod/.test(ua)) {
+        const m = ua.match(/OS (\d+)_(\d+)/);
+        return m ? `iOS / iPadOS ${m[1]}.${m[2]}` : "iOS / iPadOS";
+      }
+      if (/Android/.test(ua)) {
+        const m = ua.match(/Android ([\d.]+)/);
+        return m ? `Android ${m[1]}` : "Android";
+      }
+      if (/Windows NT/.test(ua)) return "Windows";
+      if (/Mac OS X/.test(ua)) return nav.maxTouchPoints > 1 ? "iPadOS（デスクトップ表示）" : "macOS";
+      if (/CrOS/.test(ua)) return "ChromeOS";
+      if (/Linux/.test(ua)) return "Linux";
+      return "不明";
+    }
+
+    function renderAll() {
+      const ua = nav.userAgent;
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offsetMin = -new Date().getTimezoneOffset();
+      const sign = offsetMin >= 0 ? "+" : "-";
+      const offset = `UTC${sign}${String(Math.floor(Math.abs(offsetMin) / 60)).padStart(2, "0")}:${String(Math.abs(offsetMin) % 60).padStart(2, "0")}`;
+      const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const touch = nav.maxTouchPoints > 0;
+      const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+
+      render("page", [
+        ["ドメイン", location.hostname],
+        ["接続", https ? "HTTPS（暗号化あり）" : "HTTP（暗号化なし）", https ? "ok" : "warn"],
+        ["URL", location.href, "long"],
+        ["参照元", document.referrer || "なし（直接アクセス）", "long"],
+        ["表示時刻", new Date().toLocaleString("ja-JP")],
+        ["ページ更新", "2026-10-19"],
+      ]);
+
+      render("browser", [
+        ["ブラウザ", detectBrowser(ua)],
+        ["OS", detectOS(ua)],
+        ["言語", (nav.languages && nav.languages.length ? nav.languages.join(", ") : nav.language)],
+        ["Cookie", nav.cookieEnabled ? "有効" : "無効"],
+        ["Do Not Track", nav.doNotTrack === "1" ? "有効" : "無効"],
+        ["User Agent", ua, "long"],
+      ]);
+
+      render("screen", [
+        ["画面サイズ", `${screen.width} × ${screen.height}`],
+        ["表示領域", `${innerWidth} × ${innerHeight}`],
+        ["ピクセル比", `${window.devicePixelRatio}x`],
+        ["色深度", `${screen.colorDepth} bit`],
+        ["向き", screen.orientation ? screen.orientation.type : (innerWidth > innerHeight ? "landscape" : "portrait")],
+        ["カラーモード", dark ? "ダーク" : "ライト"],
+        ["視差効果を減らす", reduced ? "有効" : "無効"],
+      ]);
+
+      render("env", [
+        ["タイムゾーン", `${tz}（${offset}）`],
+        ["CPUコア数", nav.hardwareConcurrency ? `${nav.hardwareConcurrency}` : ""],
+        ["メモリ（目安）", nav.deviceMemory ? `${nav.deviceMemory} GB 以上` : ""],
+        ["タッチ操作", touch ? `対応（最大 ${nav.maxTouchPoints} 点）` : "非対応"],
+        ["オンライン", nav.onLine ? "オンライン" : "オフライン", nav.onLine ? "ok" : "warn"],
+        ["回線種別（推定）", conn && conn.effectiveType ? conn.effectiveType : ""],
+        ["下り速度（推定）", conn && conn.downlink ? `${conn.downlink} Mbps` : ""],
+        ["遅延（推定）", conn && conn.rtt ? `${conn.rtt} ms` : ""],
+        ["データセーバー", conn && "saveData" in conn ? (conn.saveData ? "有効" : "無効") : ""],
+      ]);
+    }
+
+    renderAll();
+    addEventListener("resize", renderAll);
+    addEventListener("online", renderAll);
+    addEventListener("offline", renderAll);
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+
+    // タブ切り替え（狭い画面用）
+    document.querySelectorAll(".tabs button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b === btn));
+        document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.dataset.section === btn.dataset.tab));
+      });
+    });
 
     const note = document.getElementById("note");
-    if (host.endsWith("github.io")) {
-      note.textContent = "github.io のURLで表示中です。カスタムドメインの設定後は、そちらのURLでもアクセスして確認してください。";
-    } else if (!https) {
-      note.textContent = "カスタムドメインで表示できています。HTTPSになっていない場合は、証明書の発行を待ってから GitHub の Pages 設定で「Enforce HTTPS」を有効にしてください。";
-      note.classList.add("warn-box");
+    if (https) {
+      note.textContent = "HTTPSで正常に表示できています";
     } else {
-      note.textContent = "カスタムドメイン＋HTTPSで表示できています。設定は完了です 🎉";
+      note.textContent = "HTTPSになっていません";
+      note.classList.add("warn-box");
     }
   </script>
 </body>
