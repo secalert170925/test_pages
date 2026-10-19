@@ -123,7 +123,7 @@
     dl { margin: 0; }
     .row {
       display: grid;
-      grid-template-columns: 112px 1fr;
+      grid-template-columns: 150px 1fr;
       gap: 10px;
       padding: 5px 0;
       border-bottom: 1px solid var(--line);
@@ -205,7 +205,6 @@
       <div class="title">
         <span class="badge">公開中</span>
         <h1>テストページ</h1>
-        <p class="lead">このページが表示されていれば、公開は成功しています。</p>
       </div>
       <div class="note" id="note"></div>
     </header>
@@ -347,13 +346,13 @@
         const [rayId, rayColo] = ray.split("-");
 
         render("edge", [
-          ["キャッシュ", cache ? (cacheLabels[cache.toUpperCase()] || cache) : "なし"],
-          ["キャッシュ経過", age ? `${age} 秒` : ""],
-          ["リクエストID", rayId],
-          ["応答拠点", rayColo],
-          ["通信方式", timing.proto || ""],
-          ["往復時間", rtt],
-          ["最小往復時間", minRtt],
+          ["キャッシュ状態", cache ? (cacheLabels[cache.toUpperCase()] || cache) : "なし"],
+          ["キャッシュ経過時間", age ? `${age} 秒` : ""],
+          ["リクエストID（Ray ID）", rayId],
+          ["応答拠点（データセンター）", rayColo],
+          ["トランスポート", timing.proto || ""],
+          ["往復時間（RTT）", rtt],
+          ["最小RTT", minRtt],
         ]);
       } catch {
         render("edge", [["状態", "取得できませんでした", "warn"]]);
@@ -380,11 +379,11 @@
           ["IPアドレス", data.ip],
           ["IPバージョン", data.ip.includes(":") ? "IPv6" : "IPv4"],
           ["国・地域", countryName(data.loc)],
-          ["接続拠点", data.colo],
+          ["接続拠点（データセンター）", data.colo],
           ["HTTP", formatHttp(data.http)],
           ["TLS", data.tls && data.tls !== "off" ? data.tls : "なし"],
-          ["鍵交換", formatKex(data.kex)],
-          ["ドメイン名の暗号化", formatSni(data.sni)],
+          ["鍵交換方式", formatKex(data.kex)],
+          ["SNI暗号化（ECH）", formatSni(data.sni)],
           ["WARP", formatWarp(data.warp)],
           ["サーバー時刻", ts],
         ]);
@@ -444,11 +443,11 @@
 
       render("page", [
         ["ドメイン", location.hostname],
-        ["接続", https ? "HTTPS（暗号化あり）" : "HTTP（暗号化なし）", https ? "ok" : "warn"],
+        ["接続方式", https ? "HTTPS（暗号化あり）" : "HTTP（暗号化なし）", https ? "ok" : "warn"],
         ["URL", location.href, "long"],
-        ["参照元", document.referrer || "なし（直接アクセス）", "long"],
+        ["リファラー", document.referrer || "なし（直接アクセス）", "long"],
         ["表示時刻", new Date().toLocaleString("ja-JP")],
-        ["ページ更新", "2026-10-19"],
+        ["最終更新日", "2026-10-19"],
       ]);
 
       render("browser", [
@@ -462,12 +461,12 @@
 
       render("screen", [
         ["画面サイズ", `${screen.width} × ${screen.height}`],
-        ["表示領域", `${innerWidth} × ${innerHeight}`],
-        ["ピクセル比", `${window.devicePixelRatio}x`],
+        ["ビューポート", `${innerWidth} × ${innerHeight}`],
+        ["デバイスピクセル比", `${window.devicePixelRatio}x`],
         ["色深度", `${screen.colorDepth} bit`],
         ["向き", screen.orientation ? screen.orientation.type : (innerWidth > innerHeight ? "landscape" : "portrait")],
         ["カラーモード", dark ? "ダーク" : "ライト"],
-        ["視差効果を減らす", reduced ? "有効" : "無効"],
+        ["アニメーション軽減", reduced ? "有効" : "無効"],
       ]);
 
       render("env", [
@@ -478,7 +477,7 @@
         ["オンライン", nav.onLine ? "オンライン" : "オフライン", nav.onLine ? "ok" : "warn"],
         ["回線種別（推定）", conn && conn.effectiveType ? conn.effectiveType : ""],
         ["下り速度（推定）", conn && conn.downlink ? `${conn.downlink} Mbps` : ""],
-        ["遅延（推定）", conn && conn.rtt ? `${conn.rtt} ms` : ""],
+        ["往復時間（推定RTT）", conn && conn.rtt ? `${conn.rtt} ms` : ""],
         ["データセーバー", conn && "saveData" in conn ? (conn.saveData ? "有効" : "無効") : ""],
       ]);
     }
