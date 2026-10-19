@@ -171,7 +171,7 @@
       .lead { display: none; }
       .tabs {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 4px;
         margin-top: 12px;
         padding: 4px;
@@ -183,7 +183,7 @@
         background: transparent;
         color: var(--muted);
         font: inherit;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 600;
         padding: 7px 0;
         border-radius: 7px;
@@ -212,6 +212,7 @@
 
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="origin" aria-selected="true">接続元</button>
+      <button role="tab" data-tab="edge" aria-selected="false">配信</button>
       <button role="tab" data-tab="page" aria-selected="false">ページ</button>
       <button role="tab" data-tab="browser" aria-selected="false">ブラウザ</button>
       <button role="tab" data-tab="screen" aria-selected="false">画面</button>
@@ -222,6 +223,10 @@
       <section data-section="origin" class="active">
         <h2>接続元</h2>
         <dl id="origin"></dl>
+      </section>
+      <section data-section="edge">
+        <h2>配信</h2>
+        <dl id="edge"></dl>
       </section>
       <section data-section="page">
         <h2>ページ</h2>
@@ -281,6 +286,80 @@
       return v.replace(/^http\//i, "HTTP/").replace(/^h2$/i, "HTTP/2").replace(/^h3$/i, "HTTP/3");
     }
 
+    function formatKex(v) {
+      if (!v) return "";
+      return /mlkem|kyber/i.test(v) ? `${v}（耐量子暗号）` : v;
+    }
+
+    function formatSni(v) {
+      if (!v) return "";
+      if (v === "encrypted") return "あり（ECH）";
+      if (v === "plaintext") return "なし";
+      return v;
+    }
+
+    function formatWarp(v) {
+      if (!v) return "";
+      if (v === "off") return "未使用";
+      if (v === "on") return "使用中";
+      if (v === "plus") return "使用中（WARP+）";
+      return v;
+    }
+
+    /* ---------- 配信（レスポンスヘッダー） ---------- */
+
+    const cacheLabels = {
+      HIT: "HIT（キャッシュから配信）",
+      MISS: "MISS（オリジンから取得）",
+      EXPIRED: "EXPIRED（期限切れ→再取得）",
+      STALE: "STALE（古いキャッシュを配信）",
+      UPDATING: "UPDATING（更新中）",
+      REVALIDATED: "REVALIDATED（再検証済み）",
+      BYPASS: "BYPASS（キャッシュを回避）",
+      DYNAMIC: "DYNAMIC（キャッシュ対象外）",
+    };
+
+    function parseServerTiming(header) {
+      // 例: cfL4;desc="?proto=TCP&rtt=12345&min_rtt=..."
+      const result = {};
+      if (!header) return result;
+      const m = header.match(/cfL4;desc="\?([^"]+)"/);
+      if (!m) return result;
+      for (const pair of m[1].split("&")) {
+        const [k, v] = pair.split("=");
+        result[k] = v;
+      }
+      return result;
+    }
+
+    async function loadEdge() {
+      render("edge", [["状態", "取得中…", "muted"]]);
+      try {
+        const res = await fetch(location.pathname, { method: "HEAD", cache: "no-store" });
+        const ray = res.headers.get("cf-ray");
+        if (!ray) throw new Error("no header");
+
+        const cache = res.headers.get("cf-cache-status");
+        const age = res.headers.get("age");
+        const timing = parseServerTiming(res.headers.get("server-timing"));
+        const rtt = timing.rtt ? `${(parseInt(timing.rtt, 10) / 1000).toFixed(1)} ms` : "";
+        const minRtt = timing.min_rtt ? `${(parseInt(timing.min_rtt, 10) / 1000).toFixed(1)} ms` : "";
+        const [rayId, rayColo] = ray.split("-");
+
+        render("edge", [
+          ["キャッシュ", cache ? (cacheLabels[cache.toUpperCase()] || cache) : "なし"],
+          ["キャッシュ経過", age ? `${age} 秒` : ""],
+          ["リクエストID", rayId],
+          ["応答拠点", rayColo],
+          ["通信方式", timing.proto || ""],
+          ["往復時間", rtt],
+          ["最小往復時間", minRtt],
+        ]);
+      } catch {
+        render("edge", [["状態", "取得できませんでした", "warn"]]);
+      }
+    }
+
     async function loadOrigin() {
       render("origin", [["状態", "取得中…", "muted"]]);
       try {
@@ -304,6 +383,9 @@
           ["接続拠点", data.colo],
           ["HTTP", formatHttp(data.http)],
           ["TLS", data.tls && data.tls !== "off" ? data.tls : "なし"],
+          ["鍵交換", formatKex(data.kex)],
+          ["ドメイン名の暗号化", formatSni(data.sni)],
+          ["WARP", formatWarp(data.warp)],
           ["サーバー時刻", ts],
         ]);
       } catch {
@@ -403,8 +485,9 @@
 
     renderAll();
     loadOrigin();
+    loadEdge();
     addEventListener("resize", renderAll);
-    addEventListener("online", () => { renderAll(); loadOrigin(); });
+    addEventListener("online", () => { renderAll(); loadOrigin(); loadEdge(); });
     addEventListener("offline", renderAll);
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 
